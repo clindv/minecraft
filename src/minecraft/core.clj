@@ -1,5 +1,6 @@
 (ns minecraft.core
-  (:require (minecraft time))
+  (:require (minecraft control
+                       time))
   (:gen-class))
 (set! *warn-on-reflection* true)
 (minecraft.time/tick :run)
