@@ -1,8 +1,7 @@
 (ns minecraft.control-test
   (:require [clojure.test :refer :all]
             [minecraft.control :refer :all]
-            [minecraft.time :refer :all])
-  (:gen-class))
+            [minecraft.time :refer :all]))
 (def wasd {:press {87 (fn [x] (fn [] (reset! (x :velocity-y) -1)))
                    65 (fn [x] (fn [] (reset! (x :velocity-x) -1)))
                    83 (fn [x] (fn [] (reset! (x :velocity-y) 1)))

@@ -1,5 +1,6 @@
 (ns minecraft.core
   (:require (minecraft control
+                       graphics
                        time))
   (:gen-class))
 (set! *warn-on-reflection* true)
