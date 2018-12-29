@@ -16,7 +16,7 @@
   (.getDefaultConfiguration screen-device-default))
 ;;(.setFullScreenWindow screen-device-default frame)
 (def ^{:tag ImageIcon :private true} resource-image
-  (ImageIcon. "./resource.png"))
+  (ImageIcon. "./resources/resource.png"))
 (def ^{:tag VolatileImage} resource-cache
   (.createCompatibleVolatileImage graphics-configuration
                                   (.getIconWidth resource-image)
