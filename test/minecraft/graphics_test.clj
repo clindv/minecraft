@@ -58,3 +58,10 @@
       (doto frame
         (.setVisible false)
         (.dispose)))))
+(deftest geometry-test
+  (testing "point-trans"
+    (let [sight-line (->Line 1 2 3 4 -5 -6)
+          point-a (->Point 4 -5 -6)
+          point-b (->Point 4 -5 -7)]
+      (is (= (trans sight-line point-a) [0.0 0.0]))
+      (trans sight-line point-b))))
