@@ -49,14 +49,23 @@
                 (Math/sqrt (+ (* yx yx) (* yy yy) (* yz yz))))
              d)]
     [(> d 0) x y]))
-(def cube [-40 -50 -60 -10 -20 -30])
-(def sight [10 20 30 -40  -50 -60])
-(map (partial trans sight) (partition 3 cube))
-(def cube '[[0 1 2] [3 1 2] [0 4 2] [3 4 2]
-            [0 1 5] [3 1 5] [0 4 5] [3 4 5]])
-'[[0 1 2] [0 4 2] [3 4 2] [3 1 2]
-  [0 1 5] [3 1 5] [3 4 5] [0 4 5]
-  [0 1 2] [3 1 2] [3 1 5] [0 1 5]
-  [0 4 2] [0 4 5] [3 4 5] [3 4 2]
-  [0 1 2] [0 1 5] [0 4 5] [0 4 2]
-  [3 1 2] [3 4 2] [3 4 5] [3 1 5]]
+(defn vertex-of-cube [cube]
+  (map (partial map (partial nth cube))
+       [[0 1 2] [3 1 2] [0 4 2] [3 4 2] [0 1 5] [3 1 5] [0 4 5] [3 4 5]]))
+(defn convert [sight cube]
+  (let [[t x y] (partition 8 (apply interleave
+                                    (map (partial trans sight)
+                                         (vertex-of-cube cube))))
+        index '((0 2 3 1) (4 5 7 6) (0 1 5 4) (2 6 7 3) (0 4 6 2) (1 3 7 5))
+        forward (map (comp not (partial apply (every-pred false?))
+                           (partial map (partial nth t))) index)
+        front (list (< (nth sight 2) (nth cube 2))
+                    (> (nth sight 2) (nth cube 5))
+                    (< (nth sight 1) (nth cube 1))
+                    (> (nth sight 1) (nth cube 4))
+                    (< (nth sight 0) (nth cube 0))
+                    (> (nth sight 0) (nth cube 3)))
+        visible (map (fn [x y] (and x y)) forward front)
+        xbuf (map (partial map (partial nth x)) index)
+        ybuf (map (partial map (partial nth y)) index)]
+    [visible xbuf ybuf]))

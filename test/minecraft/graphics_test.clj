@@ -64,4 +64,8 @@
           point-a [4 -5 -6]
           point-b [4 -5 -7]]
       (is (= (trans sight-line point-a) [true 0.0 0.0]))
-      (trans sight-line point-b))))
+      (trans sight-line point-b)))
+  (testing "cube-trans"
+    (let [sight [10 20 30 -40  -50 -60]
+          cube [-40 -50 -60 -10 -20 -30]]
+      (convert sight cube))))
