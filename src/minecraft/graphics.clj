@@ -27,16 +27,13 @@
   ;;build cache
   (.drawImage (.getImage resource-image) 0 0 nil nil))
 ;;
-(deftype Point [x y z])
-(deftype Cube [a b c d e f])
-(deftype Line [a b c d e f])
 (defn trans [line point]
-  (let [ux (- (.x point) (.a line))
-        uy (- (.y point) (.b line))
-        uz (- (.z point) (.c line))
-        vx (- (.d line) (.a line))
-        vy (- (.e line) (.b line))
-        vz (- (.f line) (.c line))
+  (let [ux (- (nth point 0) (nth line 0))
+        uy (- (nth point 1) (nth line 1))
+        uz (- (nth point 2) (nth line 2))
+        vx (- (nth line 3) (nth line 0))
+        vy (- (nth line 4) (nth line 1))
+        vz (- (nth line 5) (nth line 2))
         xx (- vz)
         xy 0
         xz vx
@@ -51,12 +48,15 @@
         y (/ (/ (+ (* ux yx) (* uy yy) (* uz yz))
                 (Math/sqrt (+ (* yx yx) (* yy yy) (* yz yz))))
              d)]
-    [x y]))
-(def cube '[[a b c] [d b c] [a e c] [d e c]
-           [a b f] [d b f] [a e f] [d e f]])
-'[[a b c] [a e c] [d e c] [d b c]
- [a b f] [d b f] [d e f] [a e f]
- [a b c] [d b c] [d b f] [a b f]
- [a e c] [a e f] [d e f] [d e c]
- [a b c] [a b f] [a e f] [a e c]
- [d b c] [d e c] [d e f] [d b f]]
+    [(> d 0) x y]))
+(def cube [-40 -50 -60 -10 -20 -30])
+(def sight [10 20 30 -40  -50 -60])
+(map (partial trans sight) (partition 3 cube))
+(def cube '[[0 1 2] [3 1 2] [0 4 2] [3 4 2]
+            [0 1 5] [3 1 5] [0 4 5] [3 4 5]])
+'[[0 1 2] [0 4 2] [3 4 2] [3 1 2]
+  [0 1 5] [3 1 5] [3 4 5] [0 4 5]
+  [0 1 2] [3 1 2] [3 1 5] [0 1 5]
+  [0 4 2] [0 4 5] [3 4 5] [3 4 2]
+  [0 1 2] [0 1 5] [0 4 5] [0 4 2]
+  [3 1 2] [3 4 2] [3 4 5] [3 1 5]]
