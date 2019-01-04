@@ -27,14 +27,23 @@
         (.setIgnoreRepaint true)
         (.setVisible true)
         (.createBufferStrategy 2)))
-    (testing "draw polygon"
+    (testing "draw cube"
       (let [strategy (.getBufferStrategy frame)
-            bufx (int-array 6 (list 200 400 500 400 200 100))
-            bufy (int-array 6 (list 100 100 300 500 500 300))]
+            sight [1 2 3 4 5 -6]
+            cube [4 5 -6 5 6 -5]
+            plains (convert sight cube)]
         (dotimes [n 5]
           (let [graphics (.getDrawGraphics strategy)]
             (.clearRect graphics 0 0 800 600)
-            (.drawPolygon graphics bufx bufy 6)
+            (doseq [[t bufx bufy] plains]
+              (if t (.drawPolygon graphics
+                                  (int-array (map (comp (partial * 5000)
+                                             (partial + 0.1))
+                                       bufx))
+                                  (int-array (map (comp (partial * 800)
+                                             (partial + 0.1))
+                                       bufy))
+                                  4)))
             (.dispose graphics))
           (if (.contentsRestored strategy) "draw-pending" (.show strategy))
           (if (.contentsLost strategy) "cache-regeneration")
@@ -47,7 +56,7 @@
         (dotimes [n 10]
           (let [graphics (.getDrawGraphics strategy)]
             (.drawImage graphics minecraft.graphics/resource-cache
-                        200 200 400 400
+                        0 0 128 128
                         0 0 64 64 nil nil)
             (.dispose graphics))
           (if (.contentsRestored strategy) "draw-pending" (.show strategy))

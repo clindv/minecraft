@@ -68,4 +68,4 @@
         visible (map (fn [x y] (and x y)) forward front)
         xbuf (map (partial map (partial nth x)) index)
         ybuf (map (partial map (partial nth y)) index)]
-    [visible xbuf ybuf]))
+    (partition 3 (interleave visible xbuf ybuf))))
