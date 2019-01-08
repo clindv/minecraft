@@ -77,4 +77,49 @@
   (testing "cube-trans"
     (let [sight [10 20 30 -40  -50 -60]
           cube [-40 -50 -60 -10 -20 -30]]
-      (convert sight cube))))
+      (convert sight cube)))
+  (testing "trunk"
+    (let [side-depth 2
+          side-length (bit-shift-left 1 side-depth)
+          trunk (byte-array (bit-shift-left (long (Math/pow side-length 3)) 3))
+          z-offset (bit-shift-left (long (Math/pow side-length 2)) 3)
+          y-offset (bit-shift-left side-length 3)
+          x-offset (bit-shift-left 1 3)]
+      (dotimes [c side-length]
+        (dotimes [b 2]
+          (dotimes [a side-length]
+            (aset-byte trunk (+ (* c z-offset) (* b y-offset) (* a x-offset)) 7))))
+      (pr "init:")
+      (dotimes [n (alength trunk)] (if (zero? (Math/floorMod n 64)) (prn)) (pr (aget trunk n)))
+      (dotimes [c side-length]
+        (dotimes [b side-length]
+          (dotimes [a side-length]
+            (let [offset (+ (* c z-offset) (* b y-offset) (* a x-offset))]
+              (if (zero? (aget trunk offset)) nil
+                  (do (if (or (zero? c)
+                              (zero? (aget trunk (- offset z-offset))))
+                        (aset-byte trunk (+ offset 1) 1)
+                        (aset-byte trunk (+ offset 1) 0))
+                      (if (or (zero? b)
+                              (zero? (aget trunk (- offset y-offset))))
+                        (aset-byte trunk (+ offset 2) 2)
+                        (aset-byte trunk (+ offset 2) 0))
+                      (if (or (zero? a)
+                              (zero? (aget trunk (- offset x-offset))))
+                        (aset-byte trunk (+ offset 3) 3)
+                        (aset-byte trunk (+ offset 3) 0))
+                      (if (or (= a (dec side-length))
+                              (zero? (aget trunk (+ offset x-offset))))
+                        (aset-byte trunk (+ offset 4) 4)
+                        (aset-byte trunk (+ offset 4) 0))
+                      (if (or (= b (dec side-length))
+                              (zero? (aget trunk (+ offset y-offset))))
+                        (aset-byte trunk (+ offset 5) 5)
+                        (aset-byte trunk (+ offset 5) 0))
+                      (if (or (= c (dec side-length))
+                              (zero? (aget trunk (+ offset z-offset))))
+                        (aset-byte trunk (+ offset 6) 6)
+                        (aset-byte trunk (+ offset 6) 0))))))))
+      (prn)
+      (pr "build:")
+      (dotimes [n (alength trunk)] (if (zero? (Math/floorMod n 64)) (prn)) (pr (aget trunk n))))))
