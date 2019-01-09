@@ -77,88 +77,66 @@
           cube [-40 -50 -60 -10 -20 -30]]
       (convert sight cube)))
   (testing "trunk"
-    (let [side-depth 2
-          side-length (bit-shift-left 1 side-depth)
-          trunk (byte-array (bit-shift-left (long (Math/pow side-length 3)) 3))
-          z-offset (bit-shift-left (long (Math/pow side-length 2)) 3)
-          y-offset (bit-shift-left side-length 3)
-          x-offset (bit-shift-left 1 3)]
-      (dotimes [z side-length]
-        (dotimes [y 2]
-          (dotimes [x side-length]
-            (aset-byte trunk (+ (* z z-offset) (* y y-offset) (* x x-offset)) 7))))
-      (pr "init:")
-      (dotimes [n (alength trunk)] (if (zero? (Math/floorMod n 64)) (prn)) (pr (aget trunk n)))
-      (dotimes [z side-length]
-        (dotimes [y side-length]
-          (dotimes [x side-length]
-            (let [offset (+ (* z z-offset) (* y y-offset) (* x x-offset))]
-              (if (zero? (aget trunk offset)) nil
-                  (do (if (or (zero? z)
-                              (zero? (aget trunk (- offset z-offset))))
-                        (aset-byte trunk (+ offset 1) 1)
-                        (aset-byte trunk (+ offset 1) 0))
-                      (if (or (zero? y)
-                              (zero? (aget trunk (- offset y-offset))))
-                        (aset-byte trunk (+ offset 2) 2)
-                        (aset-byte trunk (+ offset 2) 0))
-                      (if (or (zero? x)
-                              (zero? (aget trunk (- offset x-offset))))
-                        (aset-byte trunk (+ offset 3) 3)
-                        (aset-byte trunk (+ offset 3) 0))
-                      (if (or (= x (dec side-length))
-                              (zero? (aget trunk (+ offset x-offset))))
-                        (aset-byte trunk (+ offset 4) 4)
-                        (aset-byte trunk (+ offset 4) 0))
-                      (if (or (= y (dec side-length))
-                              (zero? (aget trunk (+ offset y-offset))))
-                        (aset-byte trunk (+ offset 5) 5)
-                        (aset-byte trunk (+ offset 5) 0))
-                      (if (or (= z (dec side-length))
-                              (zero? (aget trunk (+ offset z-offset))))
-                        (aset-byte trunk (+ offset 6) 6)
-                        (aset-byte trunk (+ offset 6) 0))))))))
-      (prn)
-      (pr "build:")
-      (dotimes [n (alength trunk)] (if (zero? (Math/floorMod n 64)) (prn)) (pr (aget trunk n)))
-      (let [sight (double-array [2 2 2 3.3 4.4 5.5])
-            vertex (double-array (bit-shift-left (long (Math/pow (inc side-length) 3)) 1))
-            z-offset (bit-shift-left (long (Math/pow (inc side-length) 2)) 1)
-            y-offset (bit-shift-left (inc side-length) 1)
-            x-offset (bit-shift-left 1 1)
-            vz (- (aget sight 5) (aget sight 2))
-            vy (- (aget sight 4) (aget sight 1))
-            vx (- (aget sight 3) (aget sight 0))
-            v2v (Math/sqrt (+ (Math/pow vx 2) (Math/pow vy 2) (Math/pow vz 2)))
-            xz vx
-            xy 0
-            xx (- vz)
-            x2x (Math/sqrt (+ (Math/pow xx 2) (Math/pow xy 2) (Math/pow xz 2)))
-            yz (- (* vy vz))
-            yy (+ (* vx vx) (* vz vz))
-            yx (- (* vx vy))
-            y2y (Math/sqrt (+ (Math/pow yx 2) (Math/pow yy 2) (Math/pow yz 2)))]
-        (prn)
-        (pr "init:")
-        (dotimes [n (alength vertex)] (if (zero? (Math/floorMod n 2)) (prn)) (pr (aget vertex n)))
-        (dotimes [z (inc side-length)]
-          (dotimes [y (inc side-length)]
-            (dotimes [x (inc side-length)]
-              (let [offset (+ (* z z-offset) (* y y-offset) (* x x-offset))
-                    uz (- z (aget sight 2))
-                    uy (- y (aget sight 1))
-                    ux (- x (aget sight 0))
-                    d (/ (+ (* ux vx) (* uy vy) (* uz vz)) v2v)
-                    x (/ (/ (+ (* ux xx) (* uy xy) (* uz xz)) x2x) d)
-                    y (/ (/ (+ (* ux yx) (* uy yy) (* uz yz)) y2y) d)]
-                (if (pos? d)
-                  (do (aset-double vertex offset x)
-                      (aset-double vertex (inc offset) y))
-                  (do (aset-double vertex offset 0)
-                      (aset-double vertex (inc offset) 0)))))))
-        (prn)
-        (pr "build:")
-        (dotimes [n (alength vertex)] (if (zero? (Math/floorMod n 2)) (prn)) (pr (aget vertex n)))))))
+    (build-trunk 2)
+    (is (= (apply str trunk)
+           (str "0000000000000000000000000000000000000000000000000000000000000000"
+                "0000000000000000000000000000000000000000000000000000000000000000"
+                "0000000000000000000000000000000000000000000000000000000000000000"
+                "0000000000000000000000000000000000000000000000000000000000000000"
+                "0000000000000000000000000000000000000000000000000000000000000000"
+                "0000000000000000000000000000000000000000000000000000000000000000"
+                "0000000000000000000000000000000000000000000000000000000000000000"
+                "0000000000000000000000000000000000000000000000000000000000000000")))
+    (build-bottom-layers 2 7)
+    (is (= (apply str trunk)
+           (str "7000000070000000700000007000000070000000700000007000000070000000"
+                "0000000000000000000000000000000000000000000000000000000000000000"
+                "7000000070000000700000007000000070000000700000007000000070000000"
+                "0000000000000000000000000000000000000000000000000000000000000000"
+                "7000000070000000700000007000000070000000700000007000000070000000"
+                "0000000000000000000000000000000000000000000000000000000000000000"
+                "7000000070000000700000007000000070000000700000007000000070000000"
+                "0000000000000000000000000000000000000000000000000000000000000000")))
+    (build-surface)
+    (is (= (apply str trunk)
+           (str "7123000071200000712000007120400071030500710005007100050071004500"
+                "0000000000000000000000000000000000000000000000000000000000000000"
+                "7023000070200000702000007020400070030500700005007000050070004500"
+                "0000000000000000000000000000000000000000000000000000000000000000"
+                "7023000070200000702000007020400070030500700005007000050070004500"
+                "0000000000000000000000000000000000000000000000000000000000000000"
+                "7023006070200060702000607020406070030560700005607000056070004560"
+                "0000000000000000000000000000000000000000000000000000000000000000")))
+    (is (= (apply str (map (partial format "%1.1f") vertex))
+           (apply str (repeat 250 "0.0"))))
+    (build-vertex (double-array [2 4 2 4.4 3.3 5.5]))
+    (is (= (apply str (map (partial format "%1.1f") vertex))
+           (str "0.0""0.0""0.0""0.0""0.0""0.0""0.0""0.0""-19.9""-28.9"
+                "0.0""0.0""0.0""0.0""0.0""0.0""0.0""0.0""0.0""0.0"
+                "0.0""0.0""0.0""0.0""0.0""0.0""0.0""0.0""0.0""0.0"
+                "0.0""0.0""0.0""0.0""0.0""0.0""0.0""0.0""0.0""0.0"
+                "0.0""0.0""0.0""0.0""0.0""0.0""0.0""0.0""0.0""0.0"
+                "0.0""0.0""0.0""0.0""0.0""0.0""-3.5""-10.1""-2.3""-4.1"
+                "0.0""0.0""0.0""0.0""0.0""0.0""-6.0""-12.9""-2.8""-3.7"
+                "0.0""0.0""0.0""0.0""0.0""0.0""-19.9""-28.9""-3.5""-3.1"
+                "0.0""0.0""0.0""0.0""0.0""0.0""0.0""0.0""-4.8""-2.0"
+                "0.0""0.0""0.0""0.0""0.0""0.0""0.0""0.0""-7.3""0.2"
+                "0.0""0.0""8.9""-43.4""0.0""-6.1""-0.7""-3.2""-0.9""-2.1"
+                "0.0""0.0""0.0""0.0""0.0""-6.1""-0.8""-2.7""-1.0""-1.7"
+                "0.0""0.0""0.0""0.0""0.0""-6.1""-0.9""-2.1""-1.1""-1.2"
+                "0.0""0.0""0.0""0.0""0.0""-6.1""-1.1""-1.2""-1.3""-0.6"
+                "0.0""0.0""0.0""0.0""0.0""0.0""-1.5""0.2""-1.5""0.2"
+                "6.4""-11.5""1.5""-4.3""0.4""-2.6""-0.1""-1.8""-0.4""-1.4"
+                "11.9""-16.2""1.9""-3.9""0.4""-2.2""-0.1""-1.5""-0.4""-1.1"
+                "95.3""-87.0""2.4""-3.3""0.5""-1.6""-0.2""-1.0""-0.5""-0.7"
+                "0.0""0.0""3.3""-2.3""0.6""-0.9""-0.2""-0.5""-0.5""-0.3"
+                "0.0""0.0""5.4""0.2""0.7""0.2""-0.2""0.2""-0.6""0.2"
+                "2.4""-3.3""1.1""-2.2""0.5""-1.6""0.1""-1.3""-0.2""-1.0"
+                "2.8""-2.9""1.3""-1.8""0.5""-1.3""0.1""-1.0""-0.2""-0.8"
+                "3.3""-2.3""1.4""-1.3""0.6""-0.9""0.1""-0.6""-0.2""-0.5"
+                "4.1""-1.3""1.6""-0.7""0.6""-0.4""0.1""-0.3""-0.2""-0.2"
+                "5.4""0.2""1.8""0.2""0.7""0.2""0.1""0.2""-0.2""0.2")))
+    ))
 '([[x y z] [x (inc y) z] [(inc x) (inc y) z] [(inc x) y z]]
 [[x y z] [(inc x) y z] [(inc x) y (inc z)] [x y (inc z)]]
 [[x y z] [x (inc y) z] [x (inc y) (inc z)] [x y (inc z)]]

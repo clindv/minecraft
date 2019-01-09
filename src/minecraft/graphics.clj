@@ -69,3 +69,81 @@
         xbuf (map (partial map (partial nth x)) index)
         ybuf (map (partial map (partial nth y)) index)]
     (partition 3 (interleave visible xbuf ybuf))))
+(defn build-trunk [depth]
+  (def trunk-depth depth)
+  (def trunk-length (bit-shift-left 1 trunk-depth))
+  (def ^{:tag "[B"} trunk (byte-array (bit-shift-left (long (Math/pow trunk-length 3)) 3)))
+  (def vertex (double-array (bit-shift-left (long (Math/pow (inc trunk-length) 3)) 1))))
+(defn build-bottom-layers [^long n ^long content]
+  (let [z-offset (bit-shift-left (long (Math/pow trunk-length 2)) 3)
+        y-offset (bit-shift-left trunk-length 3)
+        x-offset (bit-shift-left 1 3)]
+    (dotimes [z trunk-length]
+      (dotimes [y n]
+        (dotimes [x trunk-length]
+          (let [offset (+ (* z z-offset) (* y y-offset) (* x x-offset))]
+            (aset-byte trunk offset content)))))))
+(defn build-surface []
+  (let [z-offset (bit-shift-left (long (Math/pow trunk-length 2)) 3)
+        y-offset (bit-shift-left trunk-length 3)
+        x-offset (bit-shift-left 1 3)]
+    (dotimes [z trunk-length]
+      (dotimes [y trunk-length]
+        (dotimes [x trunk-length]
+          (let [offset (+ (* z z-offset) (* y y-offset) (* x x-offset))]
+            (if (zero? (aget trunk offset)) nil
+                (do (if (or (zero? z)
+                            (zero? (aget trunk (- offset z-offset))))
+                      (aset-byte trunk (+ offset 1) 1)
+                      (aset-byte trunk (+ offset 1) 0))
+                    (if (or (zero? y)
+                            (zero? (aget trunk (- offset y-offset))))
+                      (aset-byte trunk (+ offset 2) 2)
+                      (aset-byte trunk (+ offset 2) 0))
+                    (if (or (zero? x)
+                            (zero? (aget trunk (- offset x-offset))))
+                      (aset-byte trunk (+ offset 3) 3)
+                      (aset-byte trunk (+ offset 3) 0))
+                    (if (or (= x (dec trunk-length))
+                            (zero? (aget trunk (+ offset x-offset))))
+                      (aset-byte trunk (+ offset 4) 4)
+                      (aset-byte trunk (+ offset 4) 0))
+                    (if (or (= y (dec trunk-length))
+                            (zero? (aget trunk (+ offset y-offset))))
+                      (aset-byte trunk (+ offset 5) 5)
+                      (aset-byte trunk (+ offset 5) 0))
+                    (if (or (= z (dec trunk-length))
+                            (zero? (aget trunk (+ offset z-offset))))
+                      (aset-byte trunk (+ offset 6) 6)
+                      (aset-byte trunk (+ offset 6) 0))))))))))
+(defn build-vertex [^doubles sight]
+  (let [z-offset (bit-shift-left (long (Math/pow (inc trunk-length) 2)) 1)
+        y-offset (bit-shift-left (inc trunk-length) 1)
+        x-offset (bit-shift-left 1 1)
+        vz (- (aget sight 5) (aget sight 2))
+        vy (- (aget sight 4) (aget sight 1))
+        vx (- (aget sight 3) (aget sight 0))
+        v2v (Math/sqrt (+ (Math/pow vx 2) (Math/pow vy 2) (Math/pow vz 2)))
+        xz vx
+        xy 0
+        xx (- vz)
+        x2x (Math/sqrt (+ (Math/pow xx 2) (Math/pow xy 2) (Math/pow xz 2)))
+        yz (- (* vy vz))
+        yy (+ (* vx vx) (* vz vz))
+        yx (- (* vx vy))
+        y2y (Math/sqrt (+ (Math/pow yx 2) (Math/pow yy 2) (Math/pow yz 2)))]
+    (dotimes [z (inc trunk-length)]
+      (dotimes [y (inc trunk-length)]
+        (dotimes [x (inc trunk-length)]
+          (let [offset (+ (* z z-offset) (* y y-offset) (* x x-offset))
+                uz (- z (aget sight 2))
+                uy (- y (aget sight 1))
+                ux (- x (aget sight 0))
+                d (/ (+ (* ux vx) (* uy vy) (* uz vz)) v2v)]
+            (if (pos? d)
+              (let [x (/ (/ (+ (* ux xx) (* uy xy) (* uz xz)) x2x) d)
+                    y (/ (/ (+ (* ux yx) (* uy yy) (* uz yz)) y2y) d)]
+                (aset-double vertex offset x)
+                (aset-double vertex (inc offset) y))
+              (do (aset-double vertex offset 0)
+                  (aset-double vertex (inc offset) 0)))))))))
