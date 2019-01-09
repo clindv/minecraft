@@ -43,7 +43,7 @@
         d (/ (+ (* ux vx) (* uy vy) (* uz vz))
              (Math/sqrt (+ (* vx vx) (* vy vy) (* vz vz))))
         x (/ (/ (+ (* ux xx) (* uy xy) (* uz xz))
-                (Math/sqrt (+ (* xx xx) (* yy yy) (* xz xz))))
+                (Math/sqrt (+ (* xx xx) (* xy xy) (* xz xz))))
              d)
         y (/ (/ (+ (* ux yx) (* uy yy) (* uz yz))
                 (Math/sqrt (+ (* yx yx) (* yy yy) (* yz yz))))
