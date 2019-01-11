@@ -136,10 +136,13 @@
                 "3.3""-2.3""1.4""-1.3""0.6""-0.9""0.1""-0.6""-0.2""-0.5"
                 "4.1""-1.3""1.6""-0.7""0.6""-0.4""0.1""-0.3""-0.2""-0.2"
                 "5.4""0.2""1.8""0.2""0.7""0.2""0.1""0.2""-0.2""0.2")))
+    (let [sight (double-array [2 4 2 4.4 3.3 5.5])]
+      (build-plain sight)
+      (prn "---")
+      (build-trunk 2)
+      (build-bottom-layers 3 7)
+      (aset-byte trunk (+ 256 128 64 32) 8)
+      (build-surface)
+      (build-vertex sight)
+      (build-plain sight))
     ))
-'([[x y z] [x (inc y) z] [(inc x) (inc y) z] [(inc x) y z]]
-[[x y z] [(inc x) y z] [(inc x) y (inc z)] [x y (inc z)]]
-[[x y z] [x (inc y) z] [x (inc y) (inc z)] [x y (inc z)]]
-[[(inc x) y z] [(inc x) (inc y) z] [(inc x) (inc y) (inc z)] [(inc x) y (inc z)]]
-[[x (inc y) z] [(inc x) (inc y) z] [(inc x) (inc y) (inc z)] [x (inc y) (inc z)]]
-[[x y (inc z)] [x (inc y) z] [(inc x) (inc y) (inc z)] [(inc x) y (inc z)]])

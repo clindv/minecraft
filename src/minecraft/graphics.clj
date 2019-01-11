@@ -73,7 +73,7 @@
   (def trunk-depth depth)
   (def trunk-length (bit-shift-left 1 trunk-depth))
   (def ^{:tag "[B"} trunk (byte-array (bit-shift-left (long (Math/pow trunk-length 3)) 3)))
-  (def vertex (double-array (bit-shift-left (long (Math/pow (inc trunk-length) 3)) 1))))
+  (def ^{:tag "[D"} vertex (double-array (bit-shift-left (long (Math/pow (inc trunk-length) 3)) 1))))
 (defn build-bottom-layers [^long n ^long content]
   (let [z-offset (bit-shift-left (long (Math/pow trunk-length 2)) 3)
         y-offset (bit-shift-left trunk-length 3)
@@ -147,3 +147,73 @@
                 (aset-double vertex (inc offset) y))
               (do (aset-double vertex offset 0)
                   (aset-double vertex (inc offset) 0)))))))))
+(defn build-plain [^doubles sight]
+  (let [z-trunk-offset (bit-shift-left (long (Math/pow trunk-length 2)) 3)
+        y-trunk-offset (bit-shift-left trunk-length 3)
+        x-trunk-offset (bit-shift-left 1 3)
+        z-vertex-offset (bit-shift-left (long (Math/pow (inc trunk-length) 2)) 1)
+        y-vertex-offset (bit-shift-left (inc trunk-length) 1)
+        x-vertex-offset (bit-shift-left 1 1)
+        a (long (Math/floor (aget sight 0)))
+        b (long (Math/floor (aget sight 1)))
+        c (long (Math/floor (aget sight 2)))
+        screen-width 1000
+        screen-height 1000
+        buf (int-array 10)
+        x-buf (int-array 4)
+        y-buf (int-array 4)]
+    (dotimes [z trunk-length]
+      (let [z (if (< z c) z (- (dec trunk-length) (- z c)))
+            z-trunk (* z z-trunk-offset)
+            z-vertex (* z z-vertex-offset)]
+        (dotimes [y trunk-length]
+          (let [y (if (< y b) y (- (dec trunk-length) (- y b)))
+                y-trunk (* y y-trunk-offset)
+                y-vertex (* y y-vertex-offset)]
+            (dotimes [x trunk-length]
+              (let [x (if (< x a) x (- (dec trunk-length) (- x a)))
+                    x-trunk (* x x-trunk-offset)
+                    x-vertex (* x x-vertex-offset)
+                    trunk-offset (+ z-trunk y-trunk x-trunk)
+                    vertex-offset (+ z-vertex y-vertex x-vertex)]
+                (if (aget trunk trunk-offset)
+                  (let [x-ooo (aget vertex vertex-offset)
+                        x-oox (aget vertex (+ vertex-offset x-vertex-offset))
+                        x-oxo (aget vertex (+ vertex-offset y-vertex-offset))
+                        x-oxx (aget vertex (+ vertex-offset y-vertex-offset x-vertex-offset))
+                        x-xoo (aget vertex (+ vertex-offset z-vertex-offset))
+                        x-xox (aget vertex (+ vertex-offset z-vertex-offset x-vertex-offset))
+                        x-xxo (aget vertex (+ vertex-offset z-vertex-offset y-vertex-offset))
+                        x-xxx (aget vertex (+ vertex-offset z-vertex-offset y-vertex-offset x-vertex-offset))
+                        y-ooo (aget vertex (inc vertex-offset))
+                        y-oox (aget vertex (inc (+ vertex-offset x-vertex-offset)))
+                        y-oxo (aget vertex (inc (+ vertex-offset y-vertex-offset)))
+                        y-oxx (aget vertex (inc (+ vertex-offset y-vertex-offset x-vertex-offset)))
+                        y-xoo (aget vertex (inc (+ vertex-offset z-vertex-offset)))
+                        y-xox (aget vertex (inc (+ vertex-offset z-vertex-offset x-vertex-offset)))
+                        y-xxo (aget vertex (inc (+ vertex-offset z-vertex-offset y-vertex-offset)))
+                        y-xxx (aget vertex (inc (+ vertex-offset z-vertex-offset y-vertex-offset x-vertex-offset)))]
+                    (if (or (<= z c) (zero? (aget trunk (+ trunk-offset 1)))) nil
+                        (do (prn z y x "-" 1)
+                            (double-array [x-ooo x-oxo x-xxo x-xoo])
+                            (double-array [y-ooo y-oxo y-xxo y-xoo])))
+                    (if (or (<= y b) (zero? (aget trunk (+ trunk-offset 2)))) nil
+                        (do (prn z y x "-" 2)
+                            (double-array [x-ooo x-xoo x-xox x-oox])
+                            (double-array [y-ooo y-xoo y-xox y-oox])))
+                    (if (or (<= x a) (zero? (aget trunk (+ trunk-offset 3)))) nil
+                        (do (prn z y x "-" 3)
+                            (double-array [x-ooo x-oxo x-oxx x-oox])
+                            (double-array [y-ooo y-oxo y-oxx y-oox])))
+                    (if (or (>= x a) (zero? (aget trunk (+ trunk-offset 4)))) nil
+                        (do (prn z y x "-" 4)
+                            (double-array [x-xoo x-xxo x-xxx x-xox])
+                            (double-array [y-xoo y-xxo y-xxx y-xox])))
+                    (if (or (>= y b) (zero? (aget trunk (+ trunk-offset 5)))) nil
+                        (do (prn z y x "-" 5)
+                            (double-array [x-oxo x-xxo x-xxx x-xox])
+                            (double-array [y-xoo y-xxo y-xxx y-xox])))
+                    (if (or (>= z c) (zero? (aget trunk (+ trunk-offset 6)))) nil
+                        (do (prn z y x "-" 6)
+                            (double-array [x-oox x-oxo x-xxx x-xox])
+                            (double-array [y-oox y-oxo y-xxx y-xox])))))))))))))
