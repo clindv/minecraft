@@ -27,48 +27,6 @@
   ;;build cache
   (.drawImage (.getImage resource-image) 0 0 nil nil))
 ;;
-(defn trans [line point]
-  (let [ux (- (nth point 0) (nth line 0))
-        uy (- (nth point 1) (nth line 1))
-        uz (- (nth point 2) (nth line 2))
-        vx (- (nth line 3) (nth line 0))
-        vy (- (nth line 4) (nth line 1))
-        vz (- (nth line 5) (nth line 2))
-        xx (- vz)
-        xy 0
-        xz vx
-        yx (- (* vx vy))
-        yy (+ (* vx vx) (* vz vz))
-        yz (- (* vy vz))
-        d (/ (+ (* ux vx) (* uy vy) (* uz vz))
-             (Math/sqrt (+ (* vx vx) (* vy vy) (* vz vz))))
-        x (/ (/ (+ (* ux xx) (* uy xy) (* uz xz))
-                (Math/sqrt (+ (* xx xx) (* xy xy) (* xz xz))))
-             d)
-        y (/ (/ (+ (* ux yx) (* uy yy) (* uz yz))
-                (Math/sqrt (+ (* yx yx) (* yy yy) (* yz yz))))
-             d)]
-    [(> d 0) x y]))
-(defn vertex-of-cube [cube]
-  (map (partial map (partial nth cube))
-       [[0 1 2] [3 1 2] [0 4 2] [3 4 2] [0 1 5] [3 1 5] [0 4 5] [3 4 5]]))
-(defn convert [sight cube]
-  (let [[t x y] (partition 8 (apply interleave
-                                    (map (partial trans sight)
-                                         (vertex-of-cube cube))))
-        index '((0 2 3 1) (4 5 7 6) (0 1 5 4) (2 6 7 3) (0 4 6 2) (1 3 7 5))
-        forward (map (comp not (partial apply (every-pred false?))
-                           (partial map (partial nth t))) index)
-        front (list (< (nth sight 2) (nth cube 2))
-                    (> (nth sight 2) (nth cube 5))
-                    (< (nth sight 1) (nth cube 1))
-                    (> (nth sight 1) (nth cube 4))
-                    (< (nth sight 0) (nth cube 0))
-                    (> (nth sight 0) (nth cube 3)))
-        visible (map (fn [x y] (and x y)) forward front)
-        xbuf (map (partial map (partial nth x)) index)
-        ybuf (map (partial map (partial nth y)) index)]
-    (partition 3 (interleave visible xbuf ybuf))))
 (defn build-trunk [depth]
   (def trunk-depth depth)
   (def trunk-length (bit-shift-left 1 trunk-depth))
@@ -116,7 +74,7 @@
                             (zero? (aget trunk (+ offset z-offset))))
                       (aset-byte trunk (+ offset 6) 6)
                       (aset-byte trunk (+ offset 6) 0))))))))))
-(defn build-vertex [^doubles sight]
+(defn build-vertex [^{:tag "[D"} sight]
   (let [z-offset (bit-shift-left (long (Math/pow (inc trunk-length) 2)) 1)
         y-offset (bit-shift-left (inc trunk-length) 1)
         x-offset (bit-shift-left 1 1)
@@ -128,9 +86,9 @@
         xy 0
         xx (- vz)
         x2x (Math/sqrt (+ (Math/pow xx 2) (Math/pow xy 2) (Math/pow xz 2)))
-        yz (- (* vy vz))
-        yy (+ (* vx vx) (* vz vz))
-        yx (- (* vx vy))
+        yz (* vy vz)
+        yy (- 0 (* vx vx) (* vz vz))
+        yx (* vx vy)
         y2y (Math/sqrt (+ (Math/pow yx 2) (Math/pow yy 2) (Math/pow yz 2)))]
     (dotimes [z (inc trunk-length)]
       (dotimes [y (inc trunk-length)]
@@ -147,7 +105,7 @@
                 (aset-double vertex (inc offset) y))
               (do (aset-double vertex offset 0)
                   (aset-double vertex (inc offset) 0)))))))))
-(defn build-plain [^doubles sight]
+(defn draw-trunk [^{:tag "[D"} sight ^{:tag "Graphics"} graphics width height]
   (let [z-trunk-offset (bit-shift-left (long (Math/pow trunk-length 2)) 3)
         y-trunk-offset (bit-shift-left trunk-length 3)
         x-trunk-offset (bit-shift-left 1 3)
@@ -160,11 +118,10 @@
         aa (long (Math/floor a))
         bb (long (Math/floor b))
         cc (long (Math/floor c))
-        screen-width 1000
-        screen-height 1000
-        buf (int-array 10)
-        x-buf (int-array 4)
-        y-buf (int-array 4)]
+        draw (fn [x y]
+               (let [^"[I" xx (int-array (map (comp (partial + (/ width 2)) (partial * width)) x))
+                     ^"[I" yy (int-array (map (comp (partial + (/ height 2)) (partial * height)) y))]
+                 (.drawPolygon graphics xx yy 4)))]
     (dotimes [z trunk-length]
       (let [z (if (< z cc) z (- (dec trunk-length) (- z cc)))
             z-trunk (* z z-trunk-offset)
@@ -205,26 +162,14 @@
                             (and (zero? x-xxo) (zero? y-xxo))
                             (and (zero? x-xxx) (zero? y-xxx))) nil
                         (do (if (or (<= z c) (zero? (aget trunk (+ trunk-offset 1)))) nil
-                                (do (prn x y z "-" 1 c)
-                                    (double-array [x-ooo x-oxo x-xxo x-xoo])
-                                    (double-array [y-ooo y-oxo y-xxo y-xoo])))
+                                (draw [x-ooo x-oxo x-oxx x-oox] [y-ooo y-oxo y-oxx y-oox]))
                             (if (or (<= y b) (zero? (aget trunk (+ trunk-offset 2)))) nil
-                                (do (prn x y z "-" 2 b)
-                                    (double-array [x-ooo x-xoo x-xox x-oox])
-                                    (double-array [y-ooo y-xoo y-xox y-oox])))
+                                (draw [x-ooo x-oox x-xox x-xoo] [y-ooo y-oox y-xox y-xoo]))
                             (if (or (<= x a) (zero? (aget trunk (+ trunk-offset 3)))) nil
-                                (do (prn x y z "-" 3 a)
-                                    (double-array [x-ooo x-oxo x-oxx x-oox])
-                                    (double-array [y-ooo y-oxo y-oxx y-oox])))
+                                (draw [x-ooo x-xoo x-xxo x-oxo] [y-ooo y-xoo y-xxo y-oxo]))
                             (if (or (>= (inc x) a) (zero? (aget trunk (+ trunk-offset 4)))) nil
-                                (do (prn x y z "-" 4 a)
-                                    (double-array [x-xoo x-xxo x-xxx x-xox])
-                                    (double-array [y-xoo y-xxo y-xxx y-xox])))
+                                (draw [x-oox x-oxx x-xxx x-xox] [y-oox y-oxx y-xxx y-xox]))
                             (if (or (>= (inc y) b) (zero? (aget trunk (+ trunk-offset 5)))) nil
-                                (do (prn x y z "-" 5 b)
-                                    (double-array [x-oxo x-xxo x-xxx x-xox])
-                                    (double-array [y-xoo y-xxo y-xxx y-xox])))
+                                (draw [x-oxo x-xxo x-xxx x-oxx] [y-oxo y-xxo y-xxx y-oxx]))
                             (if (or (>= (inc z) c) (zero? (aget trunk (+ trunk-offset 6)))) nil
-                                (do (prn x y z "-" 6 c)
-                                    (double-array [x-oox x-oxo x-xxx x-xox])
-                                    (double-array [y-oox y-oxo y-xxx y-xox])))))))))))))))
+                                (draw [x-xoo x-xox x-xxx x-xxo] [y-xoo y-xox y-xxx y-xxo]))))))))))))))
