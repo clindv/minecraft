@@ -55,7 +55,7 @@
                 height 800]
             (.drawPolygon graphics (int-array [0 width width 0]) (int-array [0 0 height height]) 4)
             (build-vertex sight)
-            (draw-trunk sight graphics width height)
+            (time (draw-trunk sight graphics width height))
             (.dispose graphics))
           (if (.contentsRestored strategy) "draw-pending" (.show strategy))
           (if (.contentsLost strategy) "cache-regeneration")

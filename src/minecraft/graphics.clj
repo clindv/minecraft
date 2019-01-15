@@ -112,64 +112,38 @@
         z-vertex-offset (bit-shift-left (long (Math/pow (inc trunk-length) 2)) 1)
         y-vertex-offset (bit-shift-left (inc trunk-length) 1)
         x-vertex-offset (bit-shift-left 1 1)
-        a (aget sight 0)
-        b (aget sight 1)
-        c (aget sight 2)
-        aa (long (Math/floor a))
-        bb (long (Math/floor b))
-        cc (long (Math/floor c))
-        draw (fn [x y]
-               (let [^"[I" xx (int-array (map (comp (partial + (/ width 2)) (partial * width)) x))
-                     ^"[I" yy (int-array (map (comp (partial + (/ height 2)) (partial * height)) y))]
-                 (.drawPolygon graphics xx yy 4)))]
+        order (fn [index sight-index] (if (< index sight-index) index (- (+ sight-index trunk-length) index 1)))
+        draw (fn [x y] (.drawPolygon graphics (int-array (map (comp (partial + (/ width 2)) (partial * width)) x))
+                                     (int-array (map (comp (partial + (/ height 2)) (partial * height)) y)) 4))]
     (dotimes [z trunk-length]
-      (let [z (if (< z cc) z (- (dec trunk-length) (- z cc)))
-            z-trunk (* z z-trunk-offset)
-            z-vertex (* z z-vertex-offset)]
+      (let [z (order z (long (Math/floor (aget sight 2))))]
         (dotimes [y trunk-length]
-          (let [y (if (< y bb) y (- (dec trunk-length) (- y bb)))
-                y-trunk (* y y-trunk-offset)
-                y-vertex (* y y-vertex-offset)]
+          (let [y (order y (long (Math/floor (aget sight 1))))]
             (dotimes [x trunk-length]
-              (let [x (if (< x aa) x (- (dec trunk-length) (- x aa)))
-                    x-trunk (* x x-trunk-offset)
-                    x-vertex (* x x-vertex-offset)
-                    trunk-offset (+ z-trunk y-trunk x-trunk)
-                    vertex-offset (+ z-vertex y-vertex x-vertex)]
-                (if (aget trunk trunk-offset)
-                  (let [x-ooo (aget vertex vertex-offset)
-                        x-oox (aget vertex (+ vertex-offset x-vertex-offset))
-                        x-oxo (aget vertex (+ vertex-offset y-vertex-offset))
-                        x-oxx (aget vertex (+ vertex-offset y-vertex-offset x-vertex-offset))
-                        x-xoo (aget vertex (+ vertex-offset z-vertex-offset))
-                        x-xox (aget vertex (+ vertex-offset z-vertex-offset x-vertex-offset))
-                        x-xxo (aget vertex (+ vertex-offset z-vertex-offset y-vertex-offset))
-                        x-xxx (aget vertex (+ vertex-offset z-vertex-offset y-vertex-offset x-vertex-offset))
-                        y-ooo (aget vertex (inc vertex-offset))
-                        y-oox (aget vertex (inc (+ vertex-offset x-vertex-offset)))
-                        y-oxo (aget vertex (inc (+ vertex-offset y-vertex-offset)))
-                        y-oxx (aget vertex (inc (+ vertex-offset y-vertex-offset x-vertex-offset)))
-                        y-xoo (aget vertex (inc (+ vertex-offset z-vertex-offset)))
-                        y-xox (aget vertex (inc (+ vertex-offset z-vertex-offset x-vertex-offset)))
-                        y-xxo (aget vertex (inc (+ vertex-offset z-vertex-offset y-vertex-offset)))
-                        y-xxx (aget vertex (inc (+ vertex-offset z-vertex-offset y-vertex-offset x-vertex-offset)))]
-                    (if (or (and (zero? x-ooo) (zero? y-ooo))
-                            (and (zero? x-oox) (zero? y-oox))
-                            (and (zero? x-oxo) (zero? y-oxo))
-                            (and (zero? x-oxx) (zero? y-oxx))
-                            (and (zero? x-xoo) (zero? y-xoo))
-                            (and (zero? x-xox) (zero? y-xox))
-                            (and (zero? x-xxo) (zero? y-xxo))
-                            (and (zero? x-xxx) (zero? y-xxx))) nil
-                        (do (if (or (<= z c) (zero? (aget trunk (+ trunk-offset 1)))) nil
-                                (draw [x-ooo x-oxo x-oxx x-oox] [y-ooo y-oxo y-oxx y-oox]))
-                            (if (or (<= y b) (zero? (aget trunk (+ trunk-offset 2)))) nil
-                                (draw [x-ooo x-oox x-xox x-xoo] [y-ooo y-oox y-xox y-xoo]))
-                            (if (or (<= x a) (zero? (aget trunk (+ trunk-offset 3)))) nil
-                                (draw [x-ooo x-xoo x-xxo x-oxo] [y-ooo y-xoo y-xxo y-oxo]))
-                            (if (or (>= (inc x) a) (zero? (aget trunk (+ trunk-offset 4)))) nil
-                                (draw [x-oox x-oxx x-xxx x-xox] [y-oox y-oxx y-xxx y-xox]))
-                            (if (or (>= (inc y) b) (zero? (aget trunk (+ trunk-offset 5)))) nil
-                                (draw [x-oxo x-xxo x-xxx x-oxx] [y-oxo y-xxo y-xxx y-oxx]))
-                            (if (or (>= (inc z) c) (zero? (aget trunk (+ trunk-offset 6)))) nil
-                                (draw [x-xoo x-xox x-xxx x-xxo] [y-xoo y-xox y-xxx y-xxo]))))))))))))))
+              (let [x (order x (long (Math/floor (aget sight 0))))
+                    trunk-offset (+ (* z z-trunk-offset) (* y y-trunk-offset) (* x x-trunk-offset))
+                    vertex-offset (+ (* z z-vertex-offset) (* y y-vertex-offset) (* x x-vertex-offset))]
+                (if (zero? (aget trunk trunk-offset)) nil
+                    (let [[x0 x1 x2 x3 x4 x5 x6 x7 y0 y1 y2 y3 y4 y5 y6 y7]
+                          (for [d [0 1] c [0 z-vertex-offset] b [0 y-vertex-offset] a [0 x-vertex-offset]]
+                            (aget vertex (+ vertex-offset d c b a)))]
+                      (if (or (and (zero? x0) (zero? y0))
+                              (and (zero? x1) (zero? y1))
+                              (and (zero? x2) (zero? y2))
+                              (and (zero? x3) (zero? y3))
+                              (and (zero? x4) (zero? y4))
+                              (and (zero? x5) (zero? y5))
+                              (and (zero? x6) (zero? y6))
+                              (and (zero? x7) (zero? y7))) nil
+                          (do (if (or (<= z (aget sight 2)) (zero? (aget trunk (+ trunk-offset 1)))) nil
+                                  (draw [x0 x2 x3 x1] [y0 y2 y3 y1]))
+                              (if (or (<= y (aget sight 1)) (zero? (aget trunk (+ trunk-offset 2)))) nil
+                                  (draw [x0 x1 x5 x4] [y0 y1 y5 y4]))
+                              (if (or (<= x (aget sight 0)) (zero? (aget trunk (+ trunk-offset 3)))) nil
+                                  (draw [x0 x4 x6 x2] [y0 y4 y6 y2]))
+                              (if (or (>= (inc x) (aget sight 0)) (zero? (aget trunk (+ trunk-offset 4)))) nil
+                                  (draw [x1 x3 x7 x5] [y1 y3 y7 y5]))
+                              (if (or (>= (inc y) (aget sight 1)) (zero? (aget trunk (+ trunk-offset 5)))) nil
+                                  (draw [x2 x6 x7 x3] [y2 y6 y7 y3]))
+                              (if (or (>= (inc z) (aget sight 2)) (zero? (aget trunk (+ trunk-offset 6)))) nil
+                                  (draw [x4 x5 x7 x6] [y4 y5 y7 y6]))))))))))))))
