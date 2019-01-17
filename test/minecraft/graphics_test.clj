@@ -7,7 +7,8 @@
                      Graphics))
   (:require [clojure.test :refer :all]
             [minecraft.graphics :refer :all]
-            [minecraft.control :as control]))
+            [minecraft.control :as control]
+            [minecraft.data :as data]))
 (set! *warn-on-reflection* true)
 (deftest frame-test
   (let [^{:tag Frame} frame (proxy [Frame] ["minecraft"])]
@@ -44,30 +45,35 @@
           (Thread/sleep 50))))
     (testing "draw trunk"
       (let [strategy (.getBufferStrategy frame)]
+        (minecraft.control/leash minecraft.data/camera minecraft.data/wasd-fly)
         (build-trunk 2)
         (build-bottom-layers 1 7)
         (aset-byte trunk (+ 256 128 32) 8)
         (build-surface)
-        (dotimes [n 80]
+        (dotimes [n 800]
           (let [^{:tag "Graphics"} graphics (.getDrawGraphics strategy)
-                ^{:tag "[D"} sight (double-array [3 5 2 1.4 2.6 2.4])
+                ^{:tag "[D"} sight (double-array (concat @(minecraft.data/camera :position)
+                                                         @(minecraft.data/camera :towards)))
                 width 1200
                 height 800]
+            (.clearRect graphics 0 0 1200 800)
             (.drawPolygon graphics (int-array [0 width width 0]) (int-array [0 0 height height]) 4)
             (build-vertex sight)
-            (time (draw-trunk sight graphics width height))
+            (draw-trunk sight graphics width height)
+            (minecraft.data/refresh minecraft.data/camera)
             (.dispose graphics))
           (if (.contentsRestored strategy) "draw-pending" (.show strategy))
           (if (.contentsLost strategy) "cache-regeneration")
           (.sync toolkit-default)
-          (Thread/sleep 50))))
+          (Thread/sleep 10))
+        (minecraft.control/unleash minecraft.data/camera minecraft.data/wasd-fly)))
     (testing "dispose"
       (doto frame
         (.setVisible false)
         (.dispose)))))
 (deftest geometry-test
   (testing "trunk"
-    (let [^{:tag "[D"} sight (double-array [2 4 2 4.4 3.3 5.5])]
+    (let [^{:tag "[D"} sight (double-array [2 4 2 0.557988666 -0.162746694 0.813733471])]
       (build-trunk 2)
       (is (= (apply str trunk)
              (str "0000000000000000000000000000000000000000000000000000000000000000"

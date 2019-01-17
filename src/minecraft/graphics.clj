@@ -78,9 +78,9 @@
   (let [z-offset (bit-shift-left (long (Math/pow (inc trunk-length) 2)) 1)
         y-offset (bit-shift-left (inc trunk-length) 1)
         x-offset (bit-shift-left 1 1)
-        vz (- (aget sight 5) (aget sight 2))
-        vy (- (aget sight 4) (aget sight 1))
-        vx (- (aget sight 3) (aget sight 0))
+        vz (aget sight 5)
+        vy (aget sight 4)
+        vx (aget sight 3)
         v2v (Math/sqrt (+ (Math/pow vx 2) (Math/pow vy 2) (Math/pow vz 2)))
         x2x (Math/sqrt (+ (Math/pow vz 2) (Math/pow vx 2)))
         yz (* vy vz)
@@ -107,37 +107,35 @@
         z-vertex-offset (bit-shift-left (long (Math/pow (inc trunk-length) 2)) 1)
         y-vertex-offset (bit-shift-left (inc trunk-length) 1)
         x-vertex-offset (bit-shift-left 1 1)
+        [xx yy zz] (map #(long (Math/floor (aget sight %))) (range 3))
         order (fn [index sight-index] (if (< index sight-index) index (- (+ sight-index trunk-length) index 1)))
         draw (fn [x y] (.drawPolygon graphics (int-array (map (comp (partial + (/ width 2)) (partial * width)) x))
                                      (int-array (map (comp (partial + (/ height 2)) (partial * height)) y)) 4))]
-    (dotimes [z trunk-length]
-      (let [z (order z (long (Math/floor (aget sight 2))))]
-        (dotimes [y trunk-length]
-          (let [y (order y (long (Math/floor (aget sight 1))))]
-            (dotimes [x trunk-length]
-              (let [x (order x (long (Math/floor (aget sight 0))))
-                    trunk-offset (+ (* z z-trunk-offset) (* y y-trunk-offset) (* x x-trunk-offset))
-                    vertex-offset (+ (* z z-vertex-offset) (* y y-vertex-offset) (* x x-vertex-offset))]
-                (if (zero? (aget trunk trunk-offset)) nil
-                    (let [v (for [d [0 1] c [0 z-vertex-offset] b [0 y-vertex-offset] a [0 x-vertex-offset]]
-                              (aget vertex (+ vertex-offset d c b a)))]
-                      (if (or (and (zero? (nth v 0)) (zero? (nth v 8)))
-                              (and (zero? (nth v 1)) (zero? (nth v 9)))
-                              (and (zero? (nth v 2)) (zero? (nth v 10)))
-                              (and (zero? (nth v 3)) (zero? (nth v 11)))
-                              (and (zero? (nth v 4)) (zero? (nth v 12)))
-                              (and (zero? (nth v 5)) (zero? (nth v 13)))
-                              (and (zero? (nth v 6)) (zero? (nth v 14)))
-                              (and (zero? (nth v 7)) (zero? (nth v 15)))) nil
-                          (do (if (or (<= z (aget sight 2)) (zero? (aget trunk (+ trunk-offset 1)))) nil
-                                  (draw (map (partial nth v) [0 2 3 1]) (map (partial nth v) [8 10 11 9])))
-                              (if (or (<= y (aget sight 1)) (zero? (aget trunk (+ trunk-offset 2)))) nil
-                                  (draw (map (partial nth v) [0 1 5 4]) (map (partial nth v) [8 9 13 12])))
-                              (if (or (<= x (aget sight 0)) (zero? (aget trunk (+ trunk-offset 3)))) nil
-                                  (draw (map (partial nth v) [0 4 6 2]) (map (partial nth v) [8 12 14 10])))
-                              (if (or (>= (inc x) (aget sight 0)) (zero? (aget trunk (+ trunk-offset 4)))) nil
-                                  (draw (map (partial nth v) [1 3 7 5]) (map (partial nth v) [9 11 15 13])))
-                              (if (or (>= (inc y) (aget sight 1)) (zero? (aget trunk (+ trunk-offset 5)))) nil
-                                  (draw (map (partial nth v) [2 6 7 3]) (map (partial nth v) [10 14 15 11])))
-                              (if (or (>= (inc z) (aget sight 2)) (zero? (aget trunk (+ trunk-offset 6)))) nil
-                                  (draw (map (partial nth v) [4 5 7 6]) (map (partial nth v) [12 13 15 14])))))))))))))))
+    (doseq [z (concat (range (min trunk-length zz)) (reverse (range (max zz 0) trunk-length)))
+            y (concat (range (min trunk-length yy)) (reverse (range (max yy 0) trunk-length)))
+            x (concat (range (min trunk-length xx)) (reverse (range (max xx 0) trunk-length)))]
+      (let [trunk-offset (+ (* z z-trunk-offset) (* y y-trunk-offset) (* x x-trunk-offset))
+            vertex-offset (+ (* z z-vertex-offset) (* y y-vertex-offset) (* x x-vertex-offset))]
+        (if (zero? (aget trunk trunk-offset)) nil
+            (let [v (for [d [0 1] c [0 z-vertex-offset] b [0 y-vertex-offset] a [0 x-vertex-offset]]
+                      (aget vertex (+ vertex-offset d c b a)))]
+              (if (or (and (zero? (nth v 0)) (zero? (nth v 8)))
+                      (and (zero? (nth v 1)) (zero? (nth v 9)))
+                      (and (zero? (nth v 2)) (zero? (nth v 10)))
+                      (and (zero? (nth v 3)) (zero? (nth v 11)))
+                      (and (zero? (nth v 4)) (zero? (nth v 12)))
+                      (and (zero? (nth v 5)) (zero? (nth v 13)))
+                      (and (zero? (nth v 6)) (zero? (nth v 14)))
+                      (and (zero? (nth v 7)) (zero? (nth v 15)))) nil
+                  (do (if (or (<= z (aget sight 2)) (zero? (aget trunk (+ trunk-offset 1)))) nil
+                          (draw (map (partial nth v) [0 2 3 1]) (map (partial nth v) [8 10 11 9])))
+                      (if (or (<= y (aget sight 1)) (zero? (aget trunk (+ trunk-offset 2)))) nil
+                          (draw (map (partial nth v) [0 1 5 4]) (map (partial nth v) [8 9 13 12])))
+                      (if (or (<= x (aget sight 0)) (zero? (aget trunk (+ trunk-offset 3)))) nil
+                          (draw (map (partial nth v) [0 4 6 2]) (map (partial nth v) [8 12 14 10])))
+                      (if (or (>= (inc x) (aget sight 0)) (zero? (aget trunk (+ trunk-offset 4)))) nil
+                          (draw (map (partial nth v) [1 3 7 5]) (map (partial nth v) [9 11 15 13])))
+                      (if (or (>= (inc y) (aget sight 1)) (zero? (aget trunk (+ trunk-offset 5)))) nil
+                          (draw (map (partial nth v) [2 6 7 3]) (map (partial nth v) [10 14 15 11])))
+                      (if (or (>= (inc z) (aget sight 2)) (zero? (aget trunk (+ trunk-offset 6)))) nil
+                          (draw (map (partial nth v) [4 5 7 6]) (map (partial nth v) [12 13 15 14])))))))))))
