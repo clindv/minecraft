@@ -45,7 +45,7 @@
           (Thread/sleep 50))))
     (testing "draw trunk"
       (let [strategy (.getBufferStrategy frame)]
-        (minecraft.control/leash minecraft.data/camera minecraft.data/wasd-fly)
+        (control/leash data/camera data/wasd-fly data/arrows-pitch-yaw)
         (build-trunk 2)
         (build-bottom-layers 1 7)
         (aset-byte trunk (+ 256 128 32) 8)
@@ -53,20 +53,21 @@
         (dotimes [n 800]
           (let [^{:tag "Graphics"} graphics (.getDrawGraphics strategy)
                 ^{:tag "[D"} sight (double-array (concat @(minecraft.data/camera :position)
-                                                         @(minecraft.data/camera :towards)))
+                                                         @(minecraft.data/camera :orientation)))
                 width 1200
                 height 800]
             (.clearRect graphics 0 0 1200 800)
+            (.clipRect graphics 0 0 1200 800)
             (.drawPolygon graphics (int-array [0 width width 0]) (int-array [0 0 height height]) 4)
             (build-vertex sight)
             (draw-trunk sight graphics width height)
-            (minecraft.data/refresh minecraft.data/camera)
+            (data/refresh data/camera)
             (.dispose graphics))
           (if (.contentsRestored strategy) "draw-pending" (.show strategy))
           (if (.contentsLost strategy) "cache-regeneration")
           (.sync toolkit-default)
-          (Thread/sleep 10))
-        (minecraft.control/unleash minecraft.data/camera minecraft.data/wasd-fly)))
+          (Thread/sleep 1))
+        (control/unleash data/camera)))
     (testing "dispose"
       (doto frame
         (.setVisible false)

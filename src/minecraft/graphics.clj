@@ -1,5 +1,6 @@
 (ns minecraft.graphics
-  (:import (java.awt Graphics
+  (:import (java.awt Color
+                     Graphics
                      GraphicsConfiguration
                      GraphicsDevice
                      GraphicsEnvironment
@@ -108,9 +109,13 @@
         y-vertex-offset (bit-shift-left (inc trunk-length) 1)
         x-vertex-offset (bit-shift-left 1 1)
         [xx yy zz] (map #(long (Math/floor (aget sight %))) (range 3))
-        order (fn [index sight-index] (if (< index sight-index) index (- (+ sight-index trunk-length) index 1)))
-        draw (fn [x y] (.drawPolygon graphics (int-array (map (comp (partial + (/ width 2)) (partial * width)) x))
-                                     (int-array (map (comp (partial + (/ height 2)) (partial * height)) y)) 4))]
+        draw (fn [x y]
+               (.setColor graphics Color/WHITE)
+               (.fillPolygon graphics (int-array (map (comp (partial + (/ width 2)) (partial * width)) x))
+                             (int-array (map (comp (partial + (/ height 2)) (partial * height)) y)) 4)
+               (.setColor graphics Color/BLACK)
+               (.drawPolygon graphics (int-array (map (comp (partial + (/ width 2)) (partial * width)) x))
+                             (int-array (map (comp (partial + (/ height 2)) (partial * height)) y)) 4))]
     (doseq [z (concat (range (min trunk-length zz)) (reverse (range (max zz 0) trunk-length)))
             y (concat (range (min trunk-length yy)) (reverse (range (max yy 0) trunk-length)))
             x (concat (range (min trunk-length xx)) (reverse (range (max xx 0) trunk-length)))]
