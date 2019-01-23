@@ -144,3 +144,21 @@
                           (draw (map (partial nth v) [2 6 7 3]) (map (partial nth v) [10 14 15 11])))
                       (if (or (>= (inc z) (aget sight 2)) (zero? (aget trunk (+ trunk-offset 6)))) nil
                           (draw (map (partial nth v) [4 5 7 6]) (map (partial nth v) [12 13 15 14])))))))))))
+(defn beam [start orientation]
+  (let [adjoin-offsets (sort > (vec (for [sig [-1 1] n (take 3 (iterate (partial * 4) 8))] (* sig n))))]
+    (loop [temp start start start orientation orientation]
+      (let [a (map #(- (if (pos? %2) (Math/floor (inc %1)) (Math/ceil (dec %1))) %1) temp orientation)
+            b (apply max-key #(nth (map / orientation a) %) (range 3))
+            c (if (pos? (nth orientation b)) (Math/floor (inc (nth temp b))) (Math/ceil (dec (nth temp b))))
+            d (map (partial * (/ (- c (nth temp b)) (nth orientation b))) orientation)
+            temp (map + temp d)
+            index (map #(long (Math/floor %)) (update (vec temp) b (if (pos? (nth orientation b)) identity dec)))
+            offset (bit-shift-left (apply + (map * index (iterate (partial * trunk-length) 1))) 3)]
+        (if (> 1000 (apply + (map #(Math/pow % 2) (map - temp start))))
+          (if (and (every? #(and (> trunk-length %) (<= 0 %)) index)
+                   (not (zero? (nth trunk offset 0))))
+            (do (dotimes [n 8] (aset-byte trunk (+ offset n) 0))
+                (doseq [[i adjoin-offset] (partition 2 (interleave (range 1 7) adjoin-offsets))]
+                  (if (zero? (nth trunk (+ offset adjoin-offset) 0)) nil
+                      (aset-byte trunk (+ offset adjoin-offset i) i))))
+            (recur temp start orientation)) nil)))))
