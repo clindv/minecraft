@@ -1,5 +1,6 @@
 (ns minecraft.graphics-test
-  (:import (java.awt event.KeyEvent
+  (:import (java.awt Color
+                     event.KeyEvent
                      event.KeyListener
                      event.WindowAdapter
                      event.WindowEvent
@@ -45,12 +46,12 @@
           (Thread/sleep 50))))
     (testing "draw trunk"
       (let [strategy (.getBufferStrategy frame)]
-        (control/leash data/camera data/wasd-fly data/arrows-pitch-yaw)
+        (control/leash data/camera data/wasd-fly data/arrows-pitch-yaw data/space-dig)
         (build-trunk 2)
         (build-bottom-layers 1 7)
         (aset-byte trunk (+ 256 128 32) 8)
         (build-surface)
-        (dotimes [n 800]
+        (dotimes [n 80000]
           (let [^{:tag "Graphics"} graphics (.getDrawGraphics strategy)
                 ^{:tag "[D"} sight (double-array (concat @(minecraft.data/camera :position)
                                                          @(minecraft.data/camera :orientation)))
@@ -61,6 +62,10 @@
             (.drawPolygon graphics (int-array [0 width width 0]) (int-array [0 0 height height]) 4)
             (build-vertex sight)
             (draw-trunk sight graphics width height)
+            (.setColor graphics Color/RED)
+            (.drawLine graphics (- 600 9) 400 (+ 600 9) 400)
+            (.drawLine graphics 600 (- 400 9) 600 (+ 400 9))
+            (.setColor graphics Color/BLACK)
             (data/refresh data/camera)
             (.dispose graphics))
           (if (.contentsRestored strategy) "draw-pending" (.show strategy))
