@@ -54,8 +54,8 @@
              40 (fn [o] (fn [] (reset! (o :angular-velocity) [0 0 0])))
              39 (fn [o] (fn [] (reset! (o :angular-velocity) [0 0 0])))}})
 (def space-dig
-  {:press {32 (fn [o] (fn [] (graphics/beam @(camera :position) @(camera :orientation))))}
-   :release {32 (fn [o] (fn [] (prn "space released")))}})
+  {:press {32 (fn [o] (fn [] (graphics/beam @(o :position) @(o :orientation))))}
+   :release {32 (fn [o] (fn [] nil))}})
 (def enter-build
   {:press {13 (fn [o] (fn [] nil))}
    :release {13 (fn [o] (fn [] nil))}})

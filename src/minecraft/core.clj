@@ -1,11 +1,13 @@
 (ns minecraft.core
-  (:import (java.awt Color
+  (:import (java.awt BasicStroke
+                     Color
                      event.KeyEvent
                      event.KeyListener
                      event.WindowAdapter
                      event.WindowEvent
                      Frame
-                     Graphics))
+                     Graphics
+                     Graphics2D))
   (:require [minecraft.control :as control]
             [minecraft.data :as data]
             [minecraft.graphics :as graphics]
@@ -28,7 +30,6 @@
                        (control/stroke :press (.getKeyCode e)))))
   (.setFocusTraversalKeysEnabled false)
   (.setExtendedState Frame/MAXIMIZED_BOTH)
-  (.setBackground Color/GRAY)
   (.setIgnoreRepaint true)
   (.setVisible true)
   (.createBufferStrategy 2))
@@ -46,16 +47,20 @@
             ^{:tag "[D"} sight (double-array (concat @(data/camera :position) @(data/camera :orientation)))
             width (.getWidth frame)
             height (.getHeight frame)]
-        (.clearRect g 0 0 width height)
+        (.setColor g Color/LIGHT_GRAY)
+        (.fillRect g 0 0 width height)
         (.clipRect g 0 0 width height)
         (.drawPolygon g (int-array [0 width width 0]) (int-array [0 0 height height]) 4)
         (graphics/build-vertex sight)
+        (.setStroke ^{:tag "Graphics2D"} g ^{:tag "BasicStroke"} (BasicStroke. 3.0))
         (graphics/draw-trunk sight g width height)
         (data/refresh data/camera)
         (.setColor g Color/RED)
+        (.setStroke ^{:tag "Graphics2D"} g ^{:tag "BasicStroke"} (BasicStroke. 1.0))
         (.drawLine g (- (/ width 2) 15) (/ height 2) (+ (/ width 2) 15) (/ height 2))
         (.drawLine g (/ width 2) (- (/ height 2) 15) (/ width 2) (+ (/ height 2) 15))
-        (.setColor g Color/BLACK)
+        (.setColor g Color/BLUE)
+        (.drawString g "WASD移动，方向键转向，空格键挖掘" 30 50)
         (.dispose g))
       (if (.contentsRestored strategy) "draw-pending" (.show strategy))
       (if (.contentsLost strategy) "cache-regeneration")
