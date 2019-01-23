@@ -128,17 +128,17 @@
           (Thread/sleep 50))))
     (testing "draw trunk"
       (let [strategy (.getBufferStrategy frame)]
-        (data/build-camera)
+        (data/build-camera [3 5 2])
         (control/unleash data/camera)
         (control/leash data/camera data/wasd-fly data/arrows-pitch-yaw data/space-dig)
         (build-trunk 2)
-        (build-bottom-layers 1 7)
+        (build-bottom-layers 4 7)
         (aset-byte trunk (+ 256 128 32) 8)
         (build-surface)
         (dotimes [n 8000]
           (let [^{:tag "Graphics"} graphics (.getDrawGraphics strategy)
-                ^{:tag "[D"} sight (double-array (concat @(minecraft.data/camera :position)
-                                                         @(minecraft.data/camera :orientation)))
+                ^{:tag "[D"} sight (double-array (concat @(data/camera :position)
+                                                         @(data/camera :orientation)))
                 width 1200
                 height 800]
             (.clearRect graphics 0 0 1200 800)

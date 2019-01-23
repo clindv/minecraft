@@ -4,16 +4,16 @@
   (:gen-class))
 (defn normalize [v]
   (map #(/ % (Math/sqrt (apply + (map (fn [a] (Math/pow a 2)) v)))) v))
-(defn physics []
-  {:position (atom [3 5 2])
+(defn physics [v]
+  {:position (atom v)
    :velocity (atom [0 0 0])
    :acceleration (atom [0 0 0])
    :orientation (atom (normalize [-1.6 -2.4 0.4]))
    :angular-velocity (atom [0 0 0])
    :angular-acceleration (atom [0 0 0])})
-(defn build-camera []
+(defn build-camera [v]
   (def camera
-    (conj (physics)
+    (conj (physics v)
           [:id (atom "camera")]
           [:tick (atom (time/tick :now))])))
 (defn refresh [o]
@@ -55,7 +55,7 @@
              39 (fn [o] (fn [] (reset! (o :angular-velocity) [0 0 0])))}})
 (def space-dig
   {:press {32 (fn [o] (fn [] (graphics/beam @(camera :position) @(camera :orientation))))}
-   :release {32 (fn [o] (fn [] nil))}})
+   :release {32 (fn [o] (fn [] (prn "space released")))}})
 (def enter-build
-  {:press {32 (fn [o] (fn [] nil))}
-   :release {32 (fn [o] (fn [] nil))}})
+  {:press {13 (fn [o] (fn [] nil))}
+   :release {13 (fn [o] (fn [] nil))}})

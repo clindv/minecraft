@@ -145,7 +145,7 @@
                       (if (or (>= (inc z) (aget sight 2)) (zero? (aget trunk (+ trunk-offset 6)))) nil
                           (draw (map (partial nth v) [4 5 7 6]) (map (partial nth v) [12 13 15 14])))))))))))
 (defn beam [start orientation]
-  (let [adjoin-offsets (sort > (vec (for [sig [-1 1] n (take 3 (iterate (partial * 4) 8))] (* sig n))))]
+  (let [adjoin-offsets (sort > (vec (for [sig [-1 1] n (take 3 (iterate (partial * trunk-length) 8))] (* sig n))))]
     (loop [temp start start start orientation orientation]
       (let [a (map #(- (if (pos? %2) (Math/floor (inc %1)) (Math/ceil (dec %1))) %1) temp orientation)
             b (apply max-key #(nth (map / orientation a) %) (range 3))
